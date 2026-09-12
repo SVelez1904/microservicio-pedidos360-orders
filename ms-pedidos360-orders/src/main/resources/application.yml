@@ -40,6 +40,14 @@ spring:
   # ====================================================================
   # 2. Seguridad: Spring Security OAuth2 Resource Server (Azure AD / Entra ID)
   # ====================================================================
+  cloud:
+    azure:
+      active-directory:
+        enabled: true
+        credential:
+          client-id: ${AZURE_AD_CLIENT_ID:TU_API_CLIENT_ID}
+        app-id-uri: api://tallerpro360
+
   security:
     oauth2:
       resourceserver:
@@ -48,7 +56,6 @@ spring:
           issuer-uri: ${AZURE_AD_ISSUER_URI:https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/v2.0}
           # JWK Set URI para validación offline de llaves públicas RS256
           jwk-set-uri: ${AZURE_AD_JWK_SET_URI:https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/discovery/v2.0/keys}
-
   # ====================================================================
   # 3. RabbitMQ: Mensajería asíncrona para notificaciones
   # ====================================================================
