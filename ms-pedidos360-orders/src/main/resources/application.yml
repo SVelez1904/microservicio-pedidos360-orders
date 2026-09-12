@@ -1,0 +1,122 @@
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+
+spring:
+  application:
+    name: ms-pedidos360-orders
+
+  # ====================================================================
+  # 1. Base de Datos: PostgreSQL en AWS RDS (Conexión HikariCP)
+  # ====================================================================
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://rds-orders-prod.cluster-c7k8m.us-east-1.rds.amazonaws.com:5432/orders_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:secret_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: OrdersHikariPool
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: ${DB_POOL_MIN:5}
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      leak-detection-threshold: 15000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 25
+          order_inserts: true
+          order_updates: true
+
+  # ====================================================================
+  # 2. Seguridad: Spring Security OAuth2 Resource Server (Azure AD / Entra ID)
+  # ====================================================================
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # URI del emisor de Azure AD: https://login.microsoftonline.com/{tenant-id}/v2.0
+          issuer-uri: ${AZURE_AD_ISSUER_URI:https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/v2.0}
+          # JWK Set URI para validación offline de llaves públicas RS256
+          jwk-set-uri: ${AZURE_AD_JWK_SET_URI:https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/discovery/v2.0/keys}
+
+  # ====================================================================
+  # 3. RabbitMQ: Mensajería asíncrona para notificaciones
+  # ====================================================================
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        max-attempts: 3
+        multiplier: 2.0
+
+  # ====================================================================
+  # 4. Apache Kafka: Event Streaming para eventos de negocio
+  # ====================================================================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        spring.json.add.type.headers: false
+
+# ====================================================================
+# 5. OpenFeign: Microservicio de Catálogo (ms-pedidos360-catalog)
+# ====================================================================
+pedidos360:
+  catalog-service:
+    url: ${CATALOG_SERVICE_URL:http://ms-pedidos360-catalog:8081}
+    connect-timeout: 3000
+    read-timeout: 5000
+  messaging:
+    rabbitmq:
+      exchange: ${RABBITMQ_EXCHANGE_ORDERS:cmd.direct}
+      routing-key-email: ${RABBITMQ_RK_EMAIL:email.send}
+    kafka:
+      topic-orders-events: ${KAFKA_TOPIC_ORDERS:orders.events}
+
+# ====================================================================
+# 6. Documentación OpenAPI 3 / Swagger UI
+# ====================================================================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+
+# ====================================================================
+# 7. Actuator & Observabilidad
+# ====================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized

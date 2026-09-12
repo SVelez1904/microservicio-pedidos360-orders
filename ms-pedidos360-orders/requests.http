@@ -1,0 +1,59 @@
+### Variables de Entorno
+@baseUrl = http://localhost:8080
+@token = YOUR_AZURE_AD_JWT_TOKEN_HERE
+
+### 1. Actuator Health Check (Público)
+GET {{baseUrl}}/actuator/health
+
+### 2. Swagger OpenAPI Documentation (Público)
+GET {{baseUrl}}/v3/api-docs
+
+### 3. Crear nuevo pedido (Requiere ROLE_Orders.Create o SCOPE_Orders.Write)
+POST {{baseUrl}}/api/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clientId": "CLI-SCL-9281",
+  "items": [
+    {
+      "productId": "SKU-LAPTOP-PRO-16",
+      "quantity": 1,
+      "unitPrice": 399.90
+    },
+    {
+      "productId": "SKU-MOUSE-WIRELESS",
+      "quantity": 2,
+      "unitPrice": 45.00
+    }
+  ]
+}
+
+### 4. Obtener pedido por ID
+@orderId = 550e8400-e29b-41d4-a716-446655440000
+GET {{baseUrl}}/api/orders/{{orderId}}
+Authorization: Bearer {{token}}
+
+### 5. Listar pedidos con paginación
+GET {{baseUrl}}/api/orders?page=0&size=10&status=CREADO
+Authorization: Bearer {{token}}
+
+### 6. Transición de Estado a ACEPTADO (Descuenta stock en catálogo)
+PATCH {{baseUrl}}/api/orders/{{orderId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "ACEPTADO",
+  "reason": "Pago verificado y stock validado"
+}
+
+### 7. Intento inválido de transición a DESPACHADO (Prueba Regla 5: Debe fallar con 422)
+PATCH {{baseUrl}}/api/orders/{{orderId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "DESPACHADO",
+  "reason": "Intento ilegal de despacho directo"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Microservicio Pedidos360 Orders",
+  "description": "Microservicio de gestión de pedidos con Spring Boot 3, Java 21, PostgreSQL en AWS RDS, Azure AD OAuth2, RabbitMQ, Kafka y OpenFeign.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

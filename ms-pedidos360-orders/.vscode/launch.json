@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot - OrdersApplication",
+      "request": "launch",
+      "mainClass": "com.pedidos360.orders.OrdersApplication",
+      "projectName": "ms-pedidos360-orders",
+      "args": "",
+      "env": {
+        "PORT": "8080",
+        "DB_URL": "jdbc:postgresql://localhost:5432/orders_db",
+        "DB_USERNAME": "postgres",
+        "DB_PASSWORD": "secret_password",
+        "RABBITMQ_HOST": "localhost",
+        "RABBITMQ_PORT": "5672",
+        "RABBITMQ_USERNAME": "guest",
+        "RABBITMQ_PASSWORD": "guest",
+        "KAFKA_BOOTSTRAP_SERVERS": "localhost:9092",
+        "CATALOG_SERVICE_URL": "http://localhost:8081",
+        "AZURE_AD_ISSUER_URI": "https://login.microsoftonline.com/common/v2.0",
+        "AZURE_AD_JWK_SET_URI": "https://login.microsoftonline.com/common/discovery/v2.0/keys"
+      }
+    }
+  ]
+}
