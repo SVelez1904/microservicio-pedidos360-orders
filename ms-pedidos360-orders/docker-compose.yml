@@ -58,15 +58,9 @@ services:
       - postgres
       - rabbitmq
       - kafka
-    environment:
-      DB_URL: jdbc:postgresql://postgres:5432/orders_db
-      DB_USERNAME: postgres
-      DB_PASSWORD: secret_password
-      RABBITMQ_HOST: rabbitmq
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      AZURE_AD_CLIENT_ID: ${AZURE_AD_CLIENT_ID}
-      AZURE_AD_ISSUER_URI: ${AZURE_AD_ISSUER_URI}
-      AZURE_AD_JWK_SET_URI: ${AZURE_AD_JWK_SET_URI}
+    # BORRAMOS la sección 'environment:' y usamos 'env_file:'
+    env_file:
+      - .env
     ports:
       - "8080:8080"
 
