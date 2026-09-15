@@ -1,8 +1,6 @@
 version: '3.8'
 
 services:
-
-  # 1. Base de datos PostgreSQL local
   postgres:
     image: postgres:16-alpine
     container_name: pedidos360-postgres
@@ -14,8 +12,9 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - pedidos360-net
 
-  # 2. Broker RabbitMQ con consola de administración web
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: pedidos360-rabbitmq
@@ -23,10 +22,11 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "5672:5672"   # Puerto AMQP
-      - "15672:15672" # Puerto Web Management UI
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - pedidos360-net
 
-  # 3. Apache Kafka (KRaft mode - sin ZooKeeper)
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: pedidos360-kafka
@@ -44,11 +44,12 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      CLUSTER_ID: 'MkU3OEVBNTcwNTM2Qk'
+      CLUSTER_ID: 'MKU3OEVBNTc3NTM2QK'
     ports:
       - "9092:9092"
+    networks:
+      - pedidos360-net
 
-  # 4. Microservicio de pedidos
   orders-svc:
     build:
       context: .
@@ -58,11 +59,16 @@ services:
       - postgres
       - rabbitmq
       - kafka
-    # BORRAMOS la sección 'environment:' y usamos 'env_file:'
     env_file:
       - .env
     ports:
       - "8080:8080"
+    networks:
+      - pedidos360-net
 
 volumes:
   pgdata:
+
+networks:
+  pedidos360-net:
+    driver: bridge
