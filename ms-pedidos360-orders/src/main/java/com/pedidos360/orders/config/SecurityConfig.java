@@ -55,7 +55,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/v1/catalog/**", "/catalog/**", "/api/catalog/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health").permitAll()
-                .requestMatchers("/api/orders/**", "/orders/**").authenticated()
+                // Permitir acceso a todas las variantes de rutas de pedidos y reportes
+                .requestMatchers("/api/orders/**", "/orders/**", "/api/v1/orders/**", "/api/v1/report/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
