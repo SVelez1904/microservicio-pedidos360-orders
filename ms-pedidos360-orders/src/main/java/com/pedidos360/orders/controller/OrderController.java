@@ -32,7 +32,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping
-@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
+//@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RequiredArgsConstructor
 @Tag(name = "Orders Management", description = "Endpoints REST para el ciclo de vida y máquina de estados de pedidos")
 @SecurityRequirement(name = "AzureAD_BearerAuth")
