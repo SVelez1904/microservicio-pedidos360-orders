@@ -41,7 +41,7 @@ public class OrderController {
     private final JdbcTemplate jdbcTemplate;
 
     // --- ENDPOINTS DE CATÁLOGO (Mapea todas las variaciones posibles de ruta) ---
-    @GetMapping({
+   @GetMapping({
         "/api/v1/catalog", 
         "/api/catalog", 
         "/catalog", 
@@ -52,14 +52,14 @@ public class OrderController {
         List<Map<String, Object>> products = jdbcTemplate.queryForList(
             "SELECT " +
             "  id AS \"id\", " +
-            "  COALESCE(sku, 'SKU-GENERIC') AS \"sku\", " +
+            "  id AS \"sku\", " +                       // Usa el id como SKU
             "  name AS \"name\", " +
-            "  COALESCE(description, 'Sin descripción') AS \"description\", " +
+            "  name AS \"description\", " +             // Usa el nombre como descripción
             "  price AS \"price\", " +
             "  stock AS \"stock\", " +
-            "  COALESCE(min_stock, 5) AS \"minStock\", " +
-            "  COALESCE(category, 'General') AS \"category\", " +
-            "  true AS \"active\" " +
+            "  5 AS \"minStock\", " +                   // Constante para Angular
+            "  'General' AS \"category\", " +           // Constante para Angular
+            "  true AS \"active\" " +                   // Constante para Angular
             "FROM products"
         );
         return ResponseEntity.ok(products);
