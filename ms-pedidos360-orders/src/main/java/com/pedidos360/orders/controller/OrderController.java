@@ -32,7 +32,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping
-//@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RequiredArgsConstructor
 @Tag(name = "Orders Management", description = "Endpoints REST para el ciclo de vida y máquina de estados de pedidos")
 @SecurityRequirement(name = "AzureAD_BearerAuth")
@@ -41,17 +40,23 @@ public class OrderController {
     private final OrderService orderService;
     private final JdbcTemplate jdbcTemplate;
 
-    // --- ENDPOINTS DE CATÁLOGO (Rutas absolutas mapeadas para el Modal de Angular) ---
-    @GetMapping({"/api/v1/catalog", "/catalog", "/api/catalog"})
+    // --- ENDPOINTS DE CATÁLOGO (Mapea todas las variaciones posibles de ruta) ---
+    @GetMapping({
+        "/api/v1/catalog", 
+        "/api/catalog", 
+        "/catalog", 
+        "/api/orders/api/v1/catalog",
+        "/api/orders/catalog"
+    })
     public ResponseEntity<List<Map<String, Object>>> getCatalog() {
         List<Map<String, Object>> products = jdbcTemplate.queryForList(
-            "SELECT id, name, price, stock FROM products"
+            "SELECT id AS \"id\", name AS \"name\", price AS \"price\", stock AS \"stock\" FROM products"
         );
         return ResponseEntity.ok(products);
     }
 
-    // --- ENDPOINTS DE ORDERS ---
-    @PostMapping("/api/orders")
+    // --- ENDPOINTS DE ORDERS (Soporta /api/orders y /api/v1/orders) ---
+    @PostMapping({"/api/orders", "/api/v1/orders"})
     @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
@@ -59,13 +64,13 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/api/orders/{id}")
+    @GetMapping({"/api/orders/{id}", "/api/v1/orders/{id}"})
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable UUID id) {
         return ResponseEntity.ok(orderService.getOrderById(id));
     }
 
-    @GetMapping("/api/orders")
+    @GetMapping({"/api/orders", "/api/v1/orders"})
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<OrderResponse>> listOrders(
             @RequestParam(required = false) String clientId,
@@ -74,7 +79,7 @@ public class OrderController {
         return ResponseEntity.ok(orderService.listOrders(clientId, status, pageable));
     }
 
-    @PatchMapping("/api/orders/{id}/status")
+    @PatchMapping({"/api/orders/{id}/status", "/api/v1/orders/{id}/status"})
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable UUID id,
@@ -82,7 +87,7 @@ public class OrderController {
         return ResponseEntity.ok(orderService.updateOrderStatus(id, request));
     }
 
-    @PostMapping("/api/orders/{id}/cancel")
+    @PostMapping({"/api/orders/{id}/cancel", "/api/v1/orders/{id}/cancel"})
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderResponse> cancelOrder(
             @PathVariable UUID id,
