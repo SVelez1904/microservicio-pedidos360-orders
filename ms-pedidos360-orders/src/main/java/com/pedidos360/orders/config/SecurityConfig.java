@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-   @Bean
+@Bean
 public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
         .csrf(AbstractHttpConfigurer::disable)
@@ -38,15 +38,14 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
             // 1. Permitir PREFLIGHTS OPTIONS para evitar bloqueos de CORS
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-            // 2. Rutas públicas de Catálogo, Swagger y Actuator
-            .requestMatchers("/catalog/**", "/api/catalog/**", "/v1/catalog/**").permitAll()
+            // 2. Ruta exacta del controlador de catálogo pública
+            .requestMatchers("/api/v1/catalog/**", "/catalog/**").permitAll()
+
+            // 3. Documentación y Actuator
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health").permitAll()
 
-            // 3. Endpoints de Pedidos protegidos
-            .requestMatchers(HttpMethod.GET, "/orders/**", "/api/orders/**").hasAnyAuthority("ROLE_Orders.Read", "ROLE_Orders.Admin", "SCOPE_Orders.Read", "SCOPE_OT.Create")
-            .requestMatchers(HttpMethod.POST, "/orders/**", "/api/orders/**").hasAnyAuthority("ROLE_Orders.Create", "ROLE_Orders.Admin", "SCOPE_Orders.Write", "SCOPE_OT.Create")
-            .requestMatchers(HttpMethod.PATCH, "/orders/**", "/api/orders/**").hasAnyAuthority("ROLE_Orders.Update", "ROLE_Orders.Admin", "SCOPE_Orders.Write", "SCOPE_OT.Create")
-            .requestMatchers(HttpMethod.DELETE, "/orders/**", "/api/orders/**").hasAnyAuthority("ROLE_Orders.Admin", "SCOPE_Orders.Write")
+            // 4. Endpoints de Orders protegidos por JWT
+            .requestMatchers("/api/orders/**", "/orders/**").authenticated()
 
             .anyRequest().authenticated()
         )
