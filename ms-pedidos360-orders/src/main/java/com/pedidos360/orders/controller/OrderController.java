@@ -50,7 +50,17 @@ public class OrderController {
     })
     public ResponseEntity<List<Map<String, Object>>> getCatalog() {
         List<Map<String, Object>> products = jdbcTemplate.queryForList(
-            "SELECT id AS \"id\", name AS \"name\", price AS \"price\", stock AS \"stock\" FROM products"
+            "SELECT " +
+            "  id AS \"id\", " +
+            "  COALESCE(sku, 'SKU-GENERIC') AS \"sku\", " +
+            "  name AS \"name\", " +
+            "  COALESCE(description, 'Sin descripción') AS \"description\", " +
+            "  price AS \"price\", " +
+            "  stock AS \"stock\", " +
+            "  COALESCE(min_stock, 5) AS \"minStock\", " +
+            "  COALESCE(category, 'General') AS \"category\", " +
+            "  true AS \"active\" " +
+            "FROM products"
         );
         return ResponseEntity.ok(products);
     }
