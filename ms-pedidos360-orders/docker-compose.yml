@@ -30,6 +30,7 @@ services:
   kafka:
     image: confluentinc/cp-kafka:7.6.0
     container_name: pedidos360-kafka
+    hostname: kafka
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
@@ -49,6 +50,11 @@ services:
       - "9092:9092"
     networks:
       - pedidos360-net
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 29092 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   orders-svc:
     build:
@@ -56,11 +62,13 @@ services:
       dockerfile: Dockerfile
     container_name: pedidos360-orders
     depends_on:
-      - postgres
-      - rabbitmq
-      - kafka
-    env_file:
-      - .env
+      postgres:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    env_file: .env
     ports:
       - "8080:8080"
     networks:
