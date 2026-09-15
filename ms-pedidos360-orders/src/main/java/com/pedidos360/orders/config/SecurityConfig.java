@@ -35,7 +35,10 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Rutas públicas: Swagger UI, OpenAPI docs y Actuator Health
+                // 1. Permitir TODOS los preflights OPTIONS (CRÍTICO PARA CORS)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // 2. Rutas públicas de documentación y salud
                 .requestMatchers(
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
@@ -44,11 +47,18 @@ public class SecurityConfig {
                     "/actuator/info"
                 ).permitAll()
 
-                // Endpoints de Orders protegidos con OAuth2 JWT de Azure AD
-                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyAuthority("ROLE_Orders.Read", "ROLE_Orders.Admin", "SCOPE_Orders.Read")
-                .requestMatchers(HttpMethod.POST, "/api/orders/**").hasAnyAuthority("ROLE_Orders.Create", "ROLE_Orders.Admin", "SCOPE_Orders.Write")
-                .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasAnyAuthority("ROLE_Orders.Update", "ROLE_Orders.Admin", "SCOPE_Orders.Write")
-                .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasAnyAuthority("ROLE_Orders.Admin", "SCOPE_Orders.Write")
+                // 3. Endpoint de Catálogo (permitir a usuarios autenticados)
+                .requestMatchers("/catalog/**", "/api/catalog/**").authenticated()
+
+                // 4. Endpoints de Pedidos (Soporta rutas con y sin prefijo /api)
+                .requestMatchers(HttpMethod.GET, "/orders/**", "/api/orders/**")
+                    .hasAnyAuthority("ROLE_Orders.Read", "ROLE_Orders.Admin", "SCOPE_Orders.Read", "SCOPE_OT.Create")
+                .requestMatchers(HttpMethod.POST, "/orders/**", "/api/orders/**")
+                    .hasAnyAuthority("ROLE_Orders.Create", "ROLE_Orders.Admin", "SCOPE_Orders.Write", "SCOPE_OT.Create")
+                .requestMatchers(HttpMethod.PATCH, "/orders/**", "/api/orders/**")
+                    .hasAnyAuthority("ROLE_Orders.Update", "ROLE_Orders.Admin", "SCOPE_Orders.Write", "SCOPE_OT.Create")
+                .requestMatchers(HttpMethod.DELETE, "/orders/**", "/api/orders/**")
+                    .hasAnyAuthority("ROLE_Orders.Admin", "SCOPE_Orders.Write")
 
                 // Cualquier otra solicitud requiere autenticación
                 .anyRequest().authenticated()
@@ -59,7 +69,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
     /**
      * Convertidor personalizado para extraer roles y scopes de tokens JWT de Azure AD (Entra ID).
      * Azure AD almacena roles de aplicación en el claim "roles" (array de Strings)
