@@ -35,16 +35,16 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
-            // 1. Permitir PREFLIGHTS OPTIONS para evitar bloqueos de CORS
+            // Permitir explícitamente TODOS los preflights OPTIONS
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-            // 2. Ruta exacta del controlador de catálogo pública
-            .requestMatchers("/api/v1/catalog/**", "/catalog/**").permitAll()
+            // Permitir el catálogo
+            .requestMatchers("/api/v1/catalog/**", "/catalog/**", "/api/catalog/**").permitAll()
 
-            // 3. Documentación y Actuator
+            // Actuator y Swagger
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health").permitAll()
 
-            // 4. Endpoints de Orders protegidos por JWT
+            // Pedidos protegidos
             .requestMatchers("/api/orders/**", "/orders/**").authenticated()
 
             .anyRequest().authenticated()
