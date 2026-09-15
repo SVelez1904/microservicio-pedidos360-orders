@@ -22,13 +22,16 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping
 @CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PATCH, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RequiredArgsConstructor
 @Tag(name = "Orders Management", description = "Endpoints REST para el ciclo de vida y máquina de estados de pedidos")
@@ -36,23 +39,34 @@ import java.util.UUID;
 public class OrderController {
 
     private final OrderService orderService;
+    private final JdbcTemplate jdbcTemplate;
 
-    @PostMapping
-    @PreAuthorize("isAuthenticated()") // Permite crear a cualquier usuario autenticado en Azure
+    // --- ENDPOINTS DE CATÁLOGO (Rutas absolutas mapeadas para el Modal de Angular) ---
+    @GetMapping({"/api/v1/catalog", "/catalog", "/api/catalog"})
+    public ResponseEntity<List<Map<String, Object>>> getCatalog() {
+        List<Map<String, Object>> products = jdbcTemplate.queryForList(
+            "SELECT id, name, price, stock FROM products"
+        );
+        return ResponseEntity.ok(products);
+    }
+
+    // --- ENDPOINTS DE ORDERS ---
+    @PostMapping("/api/orders")
+    @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         OrderResponse response = orderService.createOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/api/orders/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable UUID id) {
         return ResponseEntity.ok(orderService.getOrderById(id));
     }
 
-    @GetMapping
-    @PreAuthorize("isAuthenticated()") // Permite listar si el Token JWT de Azure es válido
+    @GetMapping("/api/orders")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<OrderResponse>> listOrders(
             @RequestParam(required = false) String clientId,
             @RequestParam(required = false) OrderStatus status,
@@ -60,7 +74,7 @@ public class OrderController {
         return ResponseEntity.ok(orderService.listOrders(clientId, status, pageable));
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/api/orders/{id}/status")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable UUID id,
@@ -68,7 +82,7 @@ public class OrderController {
         return ResponseEntity.ok(orderService.updateOrderStatus(id, request));
     }
 
-    @PostMapping("/{id}/cancel")
+    @PostMapping("/api/orders/{id}/cancel")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrderResponse> cancelOrder(
             @PathVariable UUID id,
