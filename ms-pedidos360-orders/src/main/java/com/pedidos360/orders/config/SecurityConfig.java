@@ -28,47 +28,34 @@ import java.util.stream.Collectors;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                // 1. Permitir TODOS los preflights OPTIONS (CRÍTICO PARA CORS)
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+   @Bean
+public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .csrf(AbstractHttpConfigurer::disable)
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth
+            // 1. Permitir PREFLIGHTS OPTIONS para evitar bloqueos de CORS
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 2. Rutas públicas de documentación y salud
-                .requestMatchers(
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/actuator/health",
-                    "/actuator/info"
-                ).permitAll()
+            // 2. Rutas públicas de Catálogo, Swagger y Actuator
+            .requestMatchers("/catalog/**", "/api/catalog/**", "/v1/catalog/**").permitAll()
+            .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health").permitAll()
 
-                // 3. Endpoint de Catálogo (permitir a usuarios autenticados)
-                .requestMatchers("/catalog/**", "/api/catalog/**").authenticated()
+            // 3. Endpoints de Pedidos protegidos
+            .requestMatchers(HttpMethod.GET, "/orders/**", "/api/orders/**").hasAnyAuthority("ROLE_Orders.Read", "ROLE_Orders.Admin", "SCOPE_Orders.Read", "SCOPE_OT.Create")
+            .requestMatchers(HttpMethod.POST, "/orders/**", "/api/orders/**").hasAnyAuthority("ROLE_Orders.Create", "ROLE_Orders.Admin", "SCOPE_Orders.Write", "SCOPE_OT.Create")
+            .requestMatchers(HttpMethod.PATCH, "/orders/**", "/api/orders/**").hasAnyAuthority("ROLE_Orders.Update", "ROLE_Orders.Admin", "SCOPE_Orders.Write", "SCOPE_OT.Create")
+            .requestMatchers(HttpMethod.DELETE, "/orders/**", "/api/orders/**").hasAnyAuthority("ROLE_Orders.Admin", "SCOPE_Orders.Write")
 
-                // 4. Endpoints de Pedidos (Soporta rutas con y sin prefijo /api)
-                .requestMatchers(HttpMethod.GET, "/orders/**", "/api/orders/**")
-                    .hasAnyAuthority("ROLE_Orders.Read", "ROLE_Orders.Admin", "SCOPE_Orders.Read", "SCOPE_OT.Create")
-                .requestMatchers(HttpMethod.POST, "/orders/**", "/api/orders/**")
-                    .hasAnyAuthority("ROLE_Orders.Create", "ROLE_Orders.Admin", "SCOPE_Orders.Write", "SCOPE_OT.Create")
-                .requestMatchers(HttpMethod.PATCH, "/orders/**", "/api/orders/**")
-                    .hasAnyAuthority("ROLE_Orders.Update", "ROLE_Orders.Admin", "SCOPE_Orders.Write", "SCOPE_OT.Create")
-                .requestMatchers(HttpMethod.DELETE, "/orders/**", "/api/orders/**")
-                    .hasAnyAuthority("ROLE_Orders.Admin", "SCOPE_Orders.Write")
+            .anyRequest().authenticated()
+        )
+        .oauth2ResourceServer(oauth2 -> oauth2
+            .jwt(jwt -> jwt.jwtAuthenticationConverter(azureAdJwtAuthenticationConverter()))
+        );
 
-                // Cualquier otra solicitud requiere autenticación
-                .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(azureAdJwtAuthenticationConverter()))
-            );
-
-        return http.build();
-    }
+    return http.build();
+}
     /**
      * Convertidor personalizado para extraer roles y scopes de tokens JWT de Azure AD (Entra ID).
      * Azure AD almacena roles de aplicación en el claim "roles" (array de Strings)
