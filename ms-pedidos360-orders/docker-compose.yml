@@ -45,17 +45,17 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
-      CLUSTER_ID: 'MKU3OEVBNTc3NTM2QK'
+      CLUSTER_ID: 'MkU3T0VWQk5UY3dOVE0yUUs='
     ports:
       - "9092:9092"
     networks:
       - pedidos360-net
     healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9092'"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
   orders-svc:
     build:
@@ -69,7 +69,8 @@ services:
         condition: service_started
       kafka:
         condition: service_healthy
-    env_file: .env
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     networks:
