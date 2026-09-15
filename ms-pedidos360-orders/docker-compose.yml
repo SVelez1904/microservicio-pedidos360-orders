@@ -51,11 +51,11 @@ services:
     networks:
       - pedidos360-net
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9092'"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   orders-svc:
     build:
