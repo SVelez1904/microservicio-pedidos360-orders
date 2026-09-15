@@ -67,7 +67,7 @@ public class OrderController {
 
     // --- ENDPOINTS DE ORDERS (Soporta /api/orders y /api/v1/orders) ---
     @PostMapping({"/api/orders", "/api/v1/orders"})
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("permitAll()")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         OrderResponse response = orderService.createOrder(request);
@@ -98,7 +98,7 @@ public class OrderController {
     }
 
     @PostMapping({"/api/orders/{id}/cancel", "/api/v1/orders/{id}/cancel"})
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<OrderResponse> cancelOrder(
             @PathVariable UUID id,
             @RequestParam(required = false, defaultValue = "Cancelación manual solicitada por el usuario") String reason) {
